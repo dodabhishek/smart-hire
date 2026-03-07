@@ -3,6 +3,7 @@ package com.smarthire.jobservice.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(name = "jobs")
@@ -20,7 +21,7 @@ public class Job {
     private String location;
     private String salaryRange;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "job_skills",
                      joinColumns = @JoinColumn(name = "job_id"))
     @Column(name = "skill")

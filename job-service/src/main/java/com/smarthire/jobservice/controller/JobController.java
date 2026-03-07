@@ -1,10 +1,16 @@
-package com.smarthire.jobservice.config;
+package com.smarthire.jobservice.controller;
 
 import com.smarthire.jobservice.model.Job;
 import com.smarthire.jobservice.service.JobService;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+
+
+
+
 
 @RestController
 @RequestMapping("/api/jobs")
