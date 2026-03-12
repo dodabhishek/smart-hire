@@ -1,7 +1,10 @@
-# Clean .gitignore first
-echo "target/
+cat > .gitignore << EOF
+target/
 *.zip
 *.class
 *.jar
 .DS_Store
-application.properties" > .gitignore
+application.properties
+*.iml
+.idea/
+EOF
