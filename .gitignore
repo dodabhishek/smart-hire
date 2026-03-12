@@ -1,18 +1,7 @@
-cd /Users/abhishekdod/Desktop/Prohibit/Projects/smarthire-ai
-
-cat > .gitignore << 'EOF'
-# Maven
-target/
+# Clean .gitignore first
+echo "target/
+*.zip
 *.class
 *.jar
-
-# Environment variables
-.env
-
-# IntelliJ
-.idea/
-*.iml
-
-# Mac
 .DS_Store
-EOF
+application.properties" > .gitignore
