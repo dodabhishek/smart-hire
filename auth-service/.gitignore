@@ -1,0 +1,18 @@
+cd /Users/abhishekdod/Desktop/Prohibit/Projects/smarthire-ai
+
+cat > .gitignore << 'EOF'
+# Maven
+target/
+*.class
+*.jar
+
+# Environment variables
+.env
+
+# IntelliJ
+.idea/
+*.iml
+
+# Mac
+.DS_Store
+EOF

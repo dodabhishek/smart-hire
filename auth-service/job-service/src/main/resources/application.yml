@@ -1,0 +1,24 @@
+server:
+  # Override with: --server.port=8083 or SERVER_PORT=8083 (if 8082 is in use)
+  port: 8082
+
+spring:
+  application:
+    name: job-service
+
+  datasource:
+    url: jdbc:postgresql://localhost:5556/jobdb
+    username: smarthire
+    password: smarthire123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
