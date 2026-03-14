@@ -1,0 +1,128 @@
+services:
+  # ── Infrastructure ──────────────────────────────────────────────
+
+  postgres-main:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "780719"
+      POSTGRES_DB: authdb
+    volumes:
+      - pgdata-main:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+  # ── Services ────────────────────────────────────────────────────
+
+  eureka-server:
+    build: ./eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Dserver.port=8761
+        -Deureka.instance.hostname=eureka-server
+        -Deureka.client.register-with-eureka=false
+        -Deureka.client.fetch-registry=false
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:8761 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Dserver.port=8000
+        -Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-main:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Dserver.port=8081
+        -Dspring.datasource.url=jdbc:postgresql://postgres-main:5432/authdb
+        -Dspring.datasource.username=postgres
+        -Dspring.datasource.password=780719
+        -Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+
+  student-api:
+    build: ./student-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-main:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Dserver.port=8080
+        -Dspring.datasource.url=jdbc:postgresql://postgres-main:5432/studentdb
+        -Dspring.datasource.username=postgres
+        -Dspring.datasource.password=780719
+        -Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+        -Dspring.kafka.bootstrap-servers=kafka:29092
+        -Djwt.secret=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "8084:8084"
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Dserver.port=8084
+        -Deureka.client.service-url.defaultZone=http://eureka-server:8761/eureka/
+        -Dspring.kafka.bootstrap-servers=kafka:29092
+
+volumes:
+  pgdata-main:
