@@ -4,6 +4,8 @@ import com.abhishek.student_api.dto.StudentRequest;
 import com.abhishek.student_api.dto.StudentResponse;
 import com.abhishek.student_api.entity.Student;
 import com.abhishek.student_api.exception.StudentNotFoundException;
+import com.abhishek.student_api.event.StudentCreatedEvent;
+import com.abhishek.student_api.event.StudentEventPublisher;
 import com.abhishek.student_api.repositry.StudentRepository;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +21,9 @@ public class StudentService {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private StudentEventPublisher eventPublisher;
 
     // Convert Entity → Response DTO
     private StudentResponse toResponse(Student student) {
@@ -58,6 +63,16 @@ public class StudentService {
     public StudentResponse createStudent(StudentRequest request) {
         Student student = toEntity(request);
         Student saved = studentRepository.save(student);
+
+        eventPublisher.publishStudentCreated(
+            new StudentCreatedEvent(
+                saved.getId(),
+                saved.getName(),
+                saved.getEmail(),
+                saved.getCourse()
+            )
+        );
+
         return toResponse(saved);
     }
 
